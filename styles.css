@@ -1,0 +1,187 @@
+:root{
+  --bg1: #06060b;
+  --bg2: #020112;
+  --card-bg: rgba(18,24,32,0.72);
+  --card-border: rgba(255,255,255,0.04);
+  --muted: #97a0aa;
+  --accent-left: #4f8bff;
+  --accent-right: #b66bff;
+  --glass: rgba(255,255,255,0.03);
+  --tile-bg: rgba(255,255,255,0.02);
+  --tile-border: rgba(255,255,255,0.04);
+  --tile-text: #cbd5e1;
+  --shadow: 0 8px 30px rgba(2,6,23,0.6);
+  --radius: 22px;
+  --tile-radius: 14px;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* include padding/border in element size calculation to avoid overflow from padding */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* prevent accidental horizontal scroll from wide absolutely positioned elements */
+html, body { overflow-x: hidden; }
+
+html,body{
+  height:100%;
+  margin:0;
+  background: radial-gradient( circle at 10% 20%, rgba(76,98,137,0.12) 0, transparent 20%),
+              radial-gradient( circle at 90% 80%, rgba(182,109,255,0.08) 0, transparent 18%),
+              linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+  color: #e6eef8;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+.wrap{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px;
+  position:relative;
+  overflow:hidden;
+}
+
+.particles{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+.particle{
+  position:absolute;
+  width:var(--size,8px);
+  height:var(--size,8px);
+  border-radius:50%;
+  background: rgba(150,170,255,0.18);
+  box-shadow: 0 0 10px rgba(150,170,255,0.28), 0 6px 18px rgba(150,170,255,0.08) inset;
+  filter: blur(1px);
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  animation: float var(--dur,18s) linear var(--delay,0s) infinite;
+  transform: translate(var(--x,0px), -8vh) scale(.9);
+}
+.particle.alt{
+  background: rgba(182,109,255,0.16);
+  box-shadow: 0 0 12px rgba(182,109,255,0.28), 0 6px 18px rgba(182,109,255,0.06) inset;
+}
+@keyframes float{
+  0% { transform: translate(var(--x,0px), -8vh) scale(.7); opacity:0; }
+  6% { opacity: .95; }
+  40% { transform: translate(calc(var(--x,0px) + var(--dx,20px)), calc(40vh + var(--vy,0vh))) scale(1); opacity:.9; }
+  80% { transform: translate(calc(var(--x,0px) - calc(var(--dx,0px) * 0.5)), calc(80vh + var(--vy,0vh))) scale(.85); opacity:.6; }
+  100% { transform: translate(calc(var(--x,0px) + var(--dx,40px)), 105vh) scale(.6); opacity:0; }
+}
+
+.card{
+  position:relative;
+  width:min(820px, 92vw);
+  border-radius: calc(var(--radius) + 12px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));
+  padding:44px 40px 56px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(8px) saturate(110%);
+}
+
+.header{ text-align:center; margin-bottom:28px; }
+.avatar{
+  width:92px; height:92px;
+  margin:0 auto 14px;
+  border-radius:50%;
+  display:grid; place-items:center;
+  background: linear-gradient(135deg, var(--accent-left), var(--accent-right));
+  box-shadow: 0 6px 20px rgba(91,64,255,0.14), inset 0 -6px 18px rgba(255,255,255,0.08);
+  transform-origin:center;
+  transition: transform .6s cubic-bezier(.2,.9,.2,1);
+}
+.avatar:hover{ transform: scale(1.08); }
+
+/* image inside avatar should fill, keep circular crop */
+.avatar img, .avatar-img{
+  width:100%;
+  height:100%;
+  border-radius:inherit;
+  object-fit:cover;
+  display:block;
+}
+
+.name{ font-weight:600; margin:6px 0 2px; color:#fff; font-size:18px; }
+.role{ color:var(--muted); font-size:13px; margin:0 0 10px; }
+
+.progress{
+  height:6px; width:120px; margin:12px auto 0; border-radius:999px; position:relative;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  overflow:hidden;
+}
+.progress > i{
+  display:block; height:100%; width:56%; border-radius:999px;
+  background: linear-gradient(90deg, var(--accent-left), var(--accent-right));
+  box-shadow: 0 4px 14px rgba(100,80,255,0.18);
+  transform-origin:left;
+  transition: width .7s ease;
+}
+
+.bio{ text-align:center; color: #d1dbe6; margin:20px 0 26px; font-size:15px; }
+
+.grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:18px;
+  max-width:760px;
+  margin: 0 auto;
+}
+@media(min-width:720px){
+  .grid{ grid-template-columns: repeat(4, 1fr); gap:20px; }
+}
+.tile{
+  position:relative;
+  background: var(--tile-bg);
+  border-radius: var(--tile-radius);
+  padding:18px;
+  min-height:92px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--tile-border);
+  transition: transform .24s ease, box-shadow .24s ease, background .24s ease;
+  cursor:pointer;
+  overflow:visible;
+}
+
+.tile svg{ width:28px; height:28px; display:block; color:var(--tile-text); transition: transform .4s cubic-bezier(.2,.9,.2,1), color .18s ease; }
+.tile span{ display:block; margin-top:10px; font-size:13px; color:var(--muted); }
+
+.tile::before{
+  content:"";
+  position:absolute; inset:0;
+  border-radius: inherit;
+  pointer-events:none;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45), inset 0 -2px 0 rgba(255,255,255,0.02);
+  transition: box-shadow .24s ease;
+}
+
+.tile::after{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  border: 1px solid transparent;
+  transition: opacity .24s ease, transform .24s ease;
+}
+
+.tile:hover{
+  transform: translateY(-10px);
+  box-shadow: 0 18px 40px rgba(3,7,18,0.6);
+  background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.01));
+}
+.tile:hover svg{ transform: rotate(-6deg) translateY(-2px); color:var(--accent-left); }
+
+.tile[data-color]::after{ border-color: transparent; opacity:0; box-shadow: 0 4px 40px rgba(0,0,0,0.4); }
+.tile.hovered::after{ opacity:1; transform: scale(1.02); }
+
+.footer{ margin-top:26px; text-align:center; color:var(--muted); font-size:13px; }
+
+@media(max-width:420px){
+  .card{ padding:28px 20px 36px; }
+  .avatar{ width:76px;height:76px; }
+  .grid{ gap:12px; }
+  .tile{ padding:14px; min-height:74px; border-radius:12px; }
+}
