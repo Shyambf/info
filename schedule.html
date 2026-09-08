@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Расписание постоянное</title>
+<style>
+  body {
+    font-family: "Arial", sans-serif;
+    background-color: #fff;
+    margin: 15px;
+    color: #000;
+  }
+
+  .header-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  table.schedule-table {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+    font-size: 11px;
+    background-color: #fff;
+  }
+
+  table.schedule-table th, 
+  table.schedule-table td {
+    border: 1px solid #7ea1c4;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0;
+    height: 44px;
+  }
+
+  thead th {
+    background-color: #e5f0fa;
+    font-weight: bold;
+    color: #000;
+  }
+
+  .col-week { width: 45px; }
+  .col-time { width: 90px; }
+  
+  .time-cell {
+    font-weight: bold;
+    font-size: 11px;
+    background-color: #f7faff;
+  }
+
+  .week-cell {
+    font-weight: bold;
+    font-size: 13px;
+    background-color: #f7faff;
+  }
+
+  .drop-zone {
+    height: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+  }
+
+  .drop-zone.drag-over {
+    background-color: #d6eaff !important;
+    outline: 2px dashed #0056b3;
+  }
+
+  .lesson-card {
+    width: 100%;
+    height: 100%;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.15;
+    padding: 2px 4px;
+    box-sizing: border-box;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .lesson-card:active {
+    cursor: grabbing;
+  }
+
+  .lesson-card.dragging {
+    opacity: 0.4;
+  }
+
+  .type-lecture {
+    background-color: #ffffc0;
+  }
+
+  .type-seminar {
+    background-color: #e2fbe8;
+  }
+
+  .type-lab {
+    background-color: #fae6fa;
+  }
+
+  .legend-container {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 11.5px;
+  }
+
+  .legend-box {
+    display: inline-block;
+    width: 45px;
+    height: 16px;
+    border: 1px solid #c0c0c0;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  .btn-reset {
+    margin-left: auto;
+    font-size: 11px;
+    padding: 3px 10px;
+    cursor: pointer;
+    background: #f0f4f8;
+    border: 1px solid #7ea1c4;
+    border-radius: 3px;
+  }
+  
+  .btn-reset:hover {
+    background: #e2eaf2;
+  }
+</style>
+</head>
+<body>
+
+<div class="header-title">
+  Расписание постоянное, осенний семестр 2026/2027 г. (начало:15.09.2026 вторник 2 недели - окончание: 21.12.2026)
+</div>
+
+<table class="schedule-table">
+  <thead>
+    <tr>
+      <th class="col-week" rowspan="2">нед</th>
+      <th class="col-time" rowspan="2">Время</th>
+      <th colspan="7">Занятия</th>
+    </tr>
+    <tr>
+      <th>понедельник</th>
+      <th>вторник</th>
+      <th>среда</th>
+      <th>четверг</th>
+      <th>пятница</th>
+      <th>суббота</th>
+      <th>воскресенье</th>
+    </tr>
+  </thead>
+  <tbody id="schedule-body"></tbody>
+</table>
+
+<div class="legend-container">
+  <div><span class="legend-box type-lecture"></span> - лекция</div>
+  <div><span class="legend-box type-seminar"></span> - семинар, практическое занятие</div>
+  <div><span class="legend-box type-lab"></span> - лабораторная</div>
+  <button class="btn-reset" onclick="resetToDefault()">Сбросить к исходному виду</button>
+</div>
+
+<script>
+const times = [
+  "8.00 - 9.35",
+  "9.50-11.25",
+  "11.40-13.15",
+  "14.00-15.35",
+  "15.50-17.25",
+  "17.40-19.15",
+  "19.25-21.00"
+];
+
+const initialLessons = [
+  { id: 0, slot: 8, type: "lab", text: "Методы машинного обучения лаб. Кокин В.М. Б324" },
+  { id: 1, slot: 15, type: "lecture", text: "Обработка и анализ данных лек. Ратманова И.Д. Б014" },
+  { id: 2, slot: 17, type: "seminar", text: "Технологии гибридных суперкомпьютерных вычислений сем. Чернышева Л.П. Б326" },
+  { id: 3, slot: 23, type: "lecture", text: "Архитектура систем искусственного интеллекта лек. ХХ Б310" },
+  { id: 4, slot: 24, type: "lecture", text: "Инструментальные средства для систем искусственного интеллекта лек. Алыкова А.Л. Б017" },
+  { id: 5, slot: 28, type: "seminar", text: "Упр. жизн. циклом ПО сем. Садыков А.М. Б014" },
+  { id: 6, slot: 30, type: "lecture", text: "Упр. жизн. циклом ПО лек. Садыков А.М. Б310" },
+  { id: 7, slot: 32, type: "lecture", text: "Методы машинного обучения лек. Кокин В.М. Б318" },
+  { id: 8, slot: 35, type: "lab", text: "Упр. жизн. циклом ПО лаб. Садыков А.М. Б306" },
+  { id: 9, slot: 39, type: "lab", text: "Обработка и анализ данных лаб. Ратманова И.Д. Б306" },
+  { id: 10, slot: 50, type: "lab", text: "Технологии гибридных суперкомпьютерных вычислений лаб. Чернышева Л.П. Б331(2)" },
+  { id: 11, slot: 51, type: "lab", text: "Инструментальные средства для систем искусственного интеллекта лаб. Алыкова А.Л. Б306" },
+  { id: 12, slot: 57, type: "seminar", text: "Обработка и анализ данных сем. Ратманова И.Д. Б014" },
+  { id: 13, slot: 58, type: "lab", text: "Мет. научн. исслед. лаб. Пантелеев Е.Р. Б306" },
+  { id: 14, slot: 65, type: "lecture", text: "Мет. научн. исслед. лек. Пантелеев Е.Р. Б326" },
+  { id: 15, slot: 66, type: "lecture", text: "Технологии гибридных суперкомпьютерных вычислений лек. Чернышева Л.П. Б310" },
+  { id: 16, slot: 73, type: "seminar", text: "Мет. научн. исслед. сем. Пантелеев Е.Р. Б310" },
+  { id: 17, slot: 80, type: "lab", text: "Методы машинного обучения лаб. Кокин В.М. Б324" },
+  { id: 18, slot: 87, type: "lab", text: "Архитектура систем искусственного интеллекта лаб. Нечаев В.А. Б306" }
+];
+
+let lessons = JSON.parse(JSON.stringify(initialLessons));
+
+function buildGrid() {
+  const tbody = document.getElementById("schedule-body");
+  tbody.innerHTML = "";
+
+  [1, 2].forEach(week => {
+    times.forEach((timeStr, tIdx) => {
+      const tr = document.createElement("tr");
+
+      if (tIdx === 0) {
+        const tdWeek = document.createElement("td");
+        tdWeek.rowSpan = times.length;
+        tdWeek.className = "week-cell";
+        tdWeek.innerText = week;
+        tr.appendChild(tdWeek);
+      }
+
+      const tdTime = document.createElement("td");
+      tdTime.className = "time-cell";
+      tdTime.innerText = timeStr;
+      tr.appendChild(tdTime);
+
+      for (let day = 0; day < 7; day++) {
+        const td = document.createElement("td");
+        const slotIdx = (week - 1) * 49 + tIdx * 7 + day;
+        
+        const dropZone = document.createElement("div");
+        dropZone.className = "drop-zone";
+        dropZone.dataset.slot = slotIdx;
+
+        dropZone.addEventListener("dragover", onDragOver);
+        dropZone.addEventListener("dragleave", onDragLeave);
+        dropZone.addEventListener("drop", onDrop);
+
+        td.appendChild(dropZone);
+        tr.appendChild(td);
+      }
+
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function loadStateFromUrl() {
+  const hash = window.location.hash.substring(1);
+  if (!hash) return;
+
+  const slots = hash.split("-").map(Number);
+  if (slots.length === lessons.length && slots.every(n => !isNaN(n))) {
+    lessons.forEach((lesson, i) => {
+      lesson.slot = slots[i];
+    });
+  }
+}
+
+function saveStateToUrl() {
+  const hash = lessons.map(l => l.slot).join("-");
+  window.history.replaceState(null, "", `#${hash}`);
+}
+
+function renderLessons() {
+  document.querySelectorAll(".drop-zone").forEach(el => el.innerHTML = "");
+
+  lessons.forEach(lesson => {
+    const zone = document.querySelector(`[data-slot="${lesson.slot}"]`);
+    if (zone) {
+      const card = document.createElement("div");
+      card.className = `lesson-card type-${lesson.type}`;
+      card.draggable = true;
+      card.id = `card-${lesson.id}`;
+      card.innerText = lesson.text;
+
+      card.addEventListener("dragstart", onDragStart);
+      card.addEventListener("dragend", onDragEnd);
+
+      zone.appendChild(card);
+    }
+  });
+}
+
+let draggedCardId = null;
+
+function onDragStart(e) {
+  draggedCardId = Number(this.id.replace("card-", ""));
+  this.classList.add("dragging");
+  e.dataTransfer.setData("text/plain", this.id);
+  e.dataTransfer.effectAllowed = "move";
+}
+
+function onDragEnd() {
+  this.classList.remove("dragging");
+  document.querySelectorAll(".drop-zone").forEach(z => z.classList.remove("drag-over"));
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  this.classList.add("drag-over");
+}
+
+function onDragLeave() {
+  this.classList.remove("drag-over");
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  this.classList.remove("drag-over");
+
+  const targetSlot = Number(this.dataset.slot);
+  const cardId = draggedCardId;
+
+  if (cardId === null || isNaN(targetSlot)) return;
+
+  const currentLesson = lessons.find(l => l.id === cardId);
+  const occupyingLesson = lessons.find(l => l.slot === targetSlot);
+
+  if (occupyingLesson && occupyingLesson.id !== currentLesson.id) {
+    occupyingLesson.slot = currentLesson.slot;
+  }
+
+  currentLesson.slot = targetSlot;
+
+  renderLessons();
+  saveStateToUrl();
+}
+
+function resetToDefault() {
+  lessons = JSON.parse(JSON.stringify(initialLessons));
+  window.history.replaceState(null, "", window.location.pathname);
+  renderLessons();
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  buildGrid();
+  loadStateFromUrl();
+  renderLessons();
+});
+</script>
+
+</body>
+</html>
