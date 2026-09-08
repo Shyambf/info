@@ -2,12 +2,13 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Расписание постоянное</title>
 <style>
   body {
     font-family: "Arial", sans-serif;
     background-color: #fff;
-    margin: 15px;
+    margin: 10px;
     color: #000;
   }
 
@@ -16,11 +17,20 @@
     font-weight: bold;
     font-size: 13px;
     margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #7ea1c4;
   }
 
   table.schedule-table {
     border-collapse: collapse;
     width: 100%;
+    min-width: 820px;
     table-layout: fixed;
     font-size: 11px;
     background-color: #fff;
@@ -32,13 +42,14 @@
     text-align: center;
     vertical-align: middle;
     padding: 0;
-    height: 44px;
+    height: 48px;
   }
 
   thead th {
     background-color: #e5f0fa;
     font-weight: bold;
     color: #000;
+    padding: 4px 2px;
   }
 
   .col-week { width: 45px; }
@@ -58,12 +69,13 @@
 
   .drop-zone {
     height: 100%;
-    min-height: 44px;
+    min-height: 48px;
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1px;
+    touch-action: pan-x pan-y;
   }
 
   .drop-zone.drag-over {
@@ -74,7 +86,7 @@
   .lesson-card {
     width: 100%;
     height: 100%;
-    min-height: 42px;
+    min-height: 46px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -85,6 +97,7 @@
     box-sizing: border-box;
     cursor: grab;
     user-select: none;
+    touch-action: none;
   }
 
   .lesson-card:active {
@@ -110,9 +123,15 @@
   .legend-container {
     margin-top: 10px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 15px;
-    font-size: 11.5px;
+    gap: 12px;
+    font-size: 12px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
   }
 
   .legend-box {
@@ -120,22 +139,30 @@
     width: 45px;
     height: 16px;
     border: 1px solid #c0c0c0;
-    vertical-align: middle;
     margin-right: 6px;
+    flex-shrink: 0;
   }
 
   .btn-reset {
     margin-left: auto;
-    font-size: 11px;
-    padding: 3px 10px;
+    font-size: 12px;
+    padding: 6px 12px;
     cursor: pointer;
     background: #f0f4f8;
     border: 1px solid #7ea1c4;
-    border-radius: 3px;
+    border-radius: 4px;
   }
   
   .btn-reset:hover {
     background: #e2eaf2;
+  }
+
+  @media (max-width: 600px) {
+    .btn-reset {
+      margin-left: 0;
+      width: 100%;
+      text-align: center;
+    }
   }
 </style>
 </head>
@@ -145,30 +172,32 @@
   Расписание постоянное, осенний семестр 2026/2027 г. (начало:15.09.2026 вторник 2 недели - окончание: 21.12.2026)
 </div>
 
-<table class="schedule-table">
-  <thead>
-    <tr>
-      <th class="col-week" rowspan="2">нед</th>
-      <th class="col-time" rowspan="2">Время</th>
-      <th colspan="7">Занятия</th>
-    </tr>
-    <tr>
-      <th>понедельник</th>
-      <th>вторник</th>
-      <th>среда</th>
-      <th>четверг</th>
-      <th>пятница</th>
-      <th>суббота</th>
-      <th>воскресенье</th>
-    </tr>
-  </thead>
-  <tbody id="schedule-body"></tbody>
-</table>
+<div class="table-wrapper">
+  <table class="schedule-table">
+    <thead>
+      <tr>
+        <th class="col-week" rowspan="2">нед</th>
+        <th class="col-time" rowspan="2">Время</th>
+        <th colspan="7">Занятия</th>
+      </tr>
+      <tr>
+        <th>понедельник</th>
+        <th>вторник</th>
+        <th>среда</th>
+        <th>четверг</th>
+        <th>пятница</th>
+        <th>суббота</th>
+        <th>воскресенье</th>
+      </tr>
+    </thead>
+    <tbody id="schedule-body"></tbody>
+  </table>
+</div>
 
 <div class="legend-container">
-  <div><span class="legend-box type-lecture"></span> - лекция</div>
-  <div><span class="legend-box type-seminar"></span> - семинар, практическое занятие</div>
-  <div><span class="legend-box type-lab"></span> - лабораторная</div>
+  <div class="legend-item"><span class="legend-box type-lecture"></span> - лекция</div>
+  <div class="legend-item"><span class="legend-box type-seminar"></span> - семинар, практическое занятие</div>
+  <div class="legend-item"><span class="legend-box type-lab"></span> - лабораторная</div>
   <button class="btn-reset" onclick="resetToDefault()">Сбросить к исходному виду</button>
 </div>
 
@@ -184,16 +213,16 @@ const times = [
 ];
 
 const initialLessons = [
-  { id: 0, slot: 8, type: "lab", text: "Методы машинного обучения лаб. Кокин В.М. Б324" },
-  { id: 1, slot: 15, type: "lecture", text: "Обработка и анализ данных лек. Ратманова И.Д. Б014" },
-  { id: 2, slot: 17, type: "seminar", text: "Технологии гибридных суперкомпьютерных вычислений сем. Чернышева Л.П. Б326" },
-  { id: 3, slot: 23, type: "lecture", text: "Архитектура систем искусственного интеллекта лек. ХХ Б310" },
-  { id: 4, slot: 24, type: "lecture", text: "Инструментальные средства для систем искусственного интеллекта лек. Алыкова А.Л. Б017" },
-  { id: 5, slot: 28, type: "seminar", text: "Упр. жизн. циклом ПО сем. Садыков А.М. Б014" },
-  { id: 6, slot: 30, type: "lecture", text: "Упр. жизн. циклом ПО лек. Садыков А.М. Б310" },
-  { id: 7, slot: 32, type: "lecture", text: "Методы машинного обучения лек. Кокин В.М. Б318" },
-  { id: 8, slot: 35, type: "lab", text: "Упр. жизн. циклом ПО лаб. Садыков А.М. Б306" },
-  { id: 9, slot: 39, type: "lab", text: "Обработка и анализ данных лаб. Ратманова И.Д. Б306" },
+  { id: 0, slot: 1, type: "lab", text: "Методы машинного обучения лаб. Кокин В.М. Б324" },
+  { id: 1, slot: 8, type: "lecture", text: "Обработка и анализ данных лек. Ратманова И.Д. Б014" },
+  { id: 2, slot: 10, type: "seminar", text: "Технологии гибридных суперкомпьютерных вычислений сем. Чернышева Л.П. Б326" },
+  { id: 3, slot: 16, type: "lecture", text: "Архитектура систем искусственного интеллекта лек. ХХ Б310" },
+  { id: 4, slot: 17, type: "lecture", text: "Инструментальные средства для систем искусственного интеллекта лек. Алыкова А.Л. Б017" },
+  { id: 5, slot: 21, type: "seminar", text: "Упр. жизн. циклом ПО сем. Садыков А.М. Б014" },
+  { id: 6, slot: 23, type: "lecture", text: "Упр. жизн. циклом ПО лек. Садыков А.М. Б310" },
+  { id: 7, slot: 25, type: "lecture", text: "Методы машинного обучения лек. Кокин В.М. Б318" },
+  { id: 8, slot: 28, type: "lab", text: "Упр. жизн. циклом ПО лаб. Садыков А.М. Б306" },
+  { id: 9, slot: 32, type: "lab", text: "Обработка и анализ данных лаб. Ратманова И.Д. Б306" },
   { id: 10, slot: 50, type: "lab", text: "Технологии гибридных суперкомпьютерных вычислений лаб. Чернышева Л.П. Б331(2)" },
   { id: 11, slot: 51, type: "lab", text: "Инструментальные средства для систем искусственного интеллекта лаб. Алыкова А.Л. Б306" },
   { id: 12, slot: 57, type: "seminar", text: "Обработка и анализ данных сем. Ратманова И.Д. Б014" },
@@ -281,6 +310,10 @@ function renderLessons() {
       card.addEventListener("dragstart", onDragStart);
       card.addEventListener("dragend", onDragEnd);
 
+      card.addEventListener("touchstart", onTouchStart, { passive: false });
+      card.addEventListener("touchmove", onTouchMove, { passive: false });
+      card.addEventListener("touchend", onTouchEnd);
+
       zone.appendChild(card);
     }
   });
@@ -318,7 +351,88 @@ function onDrop(e) {
   const cardId = draggedCardId;
 
   if (cardId === null || isNaN(targetSlot)) return;
+  moveLesson(cardId, targetSlot);
+}
 
+let touchCard = null;
+let touchClone = null;
+let touchShiftX = 0;
+let touchShiftY = 0;
+let lastOverZone = null;
+
+function onTouchStart(e) {
+  const touch = e.touches[0];
+  touchCard = this;
+  const rect = touchCard.getBoundingClientRect();
+
+  touchShiftX = touch.clientX - rect.left;
+  touchShiftY = touch.clientY - rect.top;
+
+  touchClone = touchCard.cloneNode(true);
+  touchClone.style.position = "fixed";
+  touchClone.style.zIndex = "9999";
+  touchClone.style.width = `${rect.width}px`;
+  touchClone.style.height = `${rect.height}px`;
+  touchClone.style.left = `${rect.left}px`;
+  touchClone.style.top = `${rect.top}px`;
+  touchClone.style.opacity = "0.85";
+  touchClone.style.boxShadow = "0 4px 10px rgba(0,0,0,0.3)";
+  touchClone.style.pointerEvents = "none";
+  document.body.appendChild(touchClone);
+
+  touchCard.classList.add("dragging");
+}
+
+function onTouchMove(e) {
+  if (!touchClone) return;
+  e.preventDefault();
+
+  const touch = e.touches[0];
+  touchClone.style.left = `${touch.clientX - touchShiftX}px`;
+  touchClone.style.top = `${touch.clientY - touchShiftY}px`;
+
+  const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+  const currentZone = elemBelow ? elemBelow.closest(".drop-zone") : null;
+
+  if (lastOverZone && lastOverZone !== currentZone) {
+    lastOverZone.classList.remove("drag-over");
+  }
+
+  if (currentZone) {
+    currentZone.classList.add("drag-over");
+    lastOverZone = currentZone;
+  }
+}
+
+function onTouchEnd(e) {
+  if (!touchClone) return;
+
+  if (touchClone.parentNode) {
+    touchClone.parentNode.removeChild(touchClone);
+  }
+  touchClone = null;
+
+  touchCard.classList.remove("dragging");
+
+  const touch = e.changedTouches[0];
+  const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+  const targetZone = elemBelow ? elemBelow.closest(".drop-zone") : null;
+
+  if (lastOverZone) {
+    lastOverZone.classList.remove("drag-over");
+    lastOverZone = null;
+  }
+
+  if (targetZone) {
+    const targetSlot = Number(targetZone.dataset.slot);
+    const cardId = Number(touchCard.id.replace("card-", ""));
+    moveLesson(cardId, targetSlot);
+  }
+
+  touchCard = null;
+}
+
+function moveLesson(cardId, targetSlot) {
   const currentLesson = lessons.find(l => l.id === cardId);
   const occupyingLesson = lessons.find(l => l.slot === targetSlot);
 
