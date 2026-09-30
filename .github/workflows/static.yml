@@ -31,6 +31,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Inject Firebase Secret
+        env:
+          FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
+        run: |
+          if [ -n "$FIREBASE_URL" ]; then
+            sed -i "s|__FIREBASE_URL_PLACEHOLDER__|${FIREBASE_URL}|g" js/schedule.js
+            echo "Firebase URL successfully injected from GitHub Secrets."
+          else
+            echo "No FIREBASE_URL secret set; skipping injection."
+          fi
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

@@ -1,463 +1,500 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Расписание постоянное</title>
-<style>
-  body {
-    font-family: "Arial", sans-serif;
-    background-color: #fff;
-    margin: 10px;
-    color: #000;
-  }
-
-  .header-title {
-    text-align: center;
-    font-weight: bold;
-    font-size: 13px;
-    margin-bottom: 8px;
-    line-height: 1.3;
-  }
-
-  .table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border: 1px solid #7ea1c4;
-  }
-
-  table.schedule-table {
-    border-collapse: collapse;
-    width: 100%;
-    min-width: 820px;
-    table-layout: fixed;
-    font-size: 11px;
-    background-color: #fff;
-  }
-
-  table.schedule-table th, 
-  table.schedule-table td {
-    border: 1px solid #7ea1c4;
-    text-align: center;
-    vertical-align: middle;
-    padding: 0;
-    height: 48px;
-  }
-
-  thead th {
-    background-color: #e5f0fa;
-    font-weight: bold;
-    color: #000;
-    padding: 4px 2px;
-  }
-
-  .col-week { width: 45px; }
-  .col-time { width: 90px; }
-  
-  .time-cell {
-    font-weight: bold;
-    font-size: 11px;
-    background-color: #f7faff;
-  }
-
-  .week-cell {
-    font-weight: bold;
-    font-size: 13px;
-    background-color: #f7faff;
-  }
-
-  .drop-zone {
-    height: 100%;
-    min-height: 48px;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1px;
-    touch-action: pan-x pan-y;
-  }
-
-  .drop-zone.drag-over {
-    background-color: #d6eaff !important;
-    outline: 2px dashed #0056b3;
-  }
-
-  .lesson-card {
-    width: 100%;
-    height: 100%;
-    min-height: 46px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    font-size: 11px;
-    line-height: 1.15;
-    padding: 2px 4px;
-    box-sizing: border-box;
-    cursor: grab;
-    user-select: none;
-    touch-action: none;
-  }
-
-  .lesson-card:active {
-    cursor: grabbing;
-  }
-
-  .lesson-card.dragging {
-    opacity: 0.4;
-  }
-
-  .type-lecture {
-    background-color: #ffffc0;
-  }
-
-  .type-seminar {
-    background-color: #e2fbe8;
-  }
-
-  .type-lab {
-    background-color: #fae6fa;
-  }
-
-  .legend-container {
-    margin-top: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-    font-size: 12px;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-  }
-
-  .legend-box {
-    display: inline-block;
-    width: 45px;
-    height: 16px;
-    border: 1px solid #c0c0c0;
-    margin-right: 6px;
-    flex-shrink: 0;
-  }
-
-  .btn-reset {
-    margin-left: auto;
-    font-size: 12px;
-    padding: 6px 12px;
-    cursor: pointer;
-    background: #f0f4f8;
-    border: 1px solid #7ea1c4;
-    border-radius: 4px;
-  }
-  
-  .btn-reset:hover {
-    background: #e2eaf2;
-  }
-
-  @media (max-width: 600px) {
-    .btn-reset {
-      margin-left: 0;
-      width: 100%;
-      text-align: center;
-    }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Расписание занятий и лабораторных | Осенний семестр 2026/2027</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/schedule.css">
 </head>
 <body>
 
-<div class="header-title">
-  Расписание постоянное, осенний семестр 2026/2027 г. (начало:15.09.2026 вторник 2 недели - окончание: 21.12.2026)
+<!-- SIDEBAR BACKDROP FOR MOBILE -->
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+
+<!-- TOP HEADER -->
+<header class="app-header">
+  <div class="header-top-row">
+    <div class="header-left">
+      <button class="mobile-toggle-btn" onclick="toggleSidebar(true)" title="Предметы">
+        📚 Предметы
+      </button>
+      <div class="title-group">
+        <h1>Расписание занятий</h1>
+        <div class="header-sub-badges">
+          <span class="active-week-badge" id="current-week-indicator">Неделя 2</span>
+          <span class="semester-dates" id="semester-info">Осенний семестр 2026/2027</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="btn btn-outline btn-sm btn-icon-only" id="btn-theme-toggle" onclick="toggleTheme()" title="Переключить тему (светлая / тёмная)">
+        <span id="theme-icon">🌙</span> <span class="btn-text" id="theme-text">Тёмная</span>
+      </button>
+      <button class="btn btn-primary btn-sm" id="btn-edit-mode-toggle" onclick="handleEditModeButton()">
+        🔒 <span class="btn-text">Редактор</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="view-switchers-bar">
+    <div class="view-switchers">
+      <button class="view-tab-btn active" id="tab-btn-grid" onclick="switchView('grid')">
+        🗓️ Расписание
+      </button>
+      <button class="view-tab-btn" id="tab-btn-month" onclick="switchView('month')">
+        📅 Календарь
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- EDIT MODE BAR -->
+<div class="edit-banner" id="edit-banner">
+  <div class="edit-banner-text">
+    <strong>✏️ Режим редактирования:</strong> настройте базовое повторяющееся расписание или вносите точечные изменения по датам.
+  </div>
+  <div class="edit-banner-actions">
+    <button class="btn btn-primary btn-sm" onclick="openBaseScheduleTemplate(1)" title="Перейти к заполнению базового шаблона на весь семестр">
+      📋 Базовое расписание
+    </button>
+    <button class="btn btn-outline btn-sm" onclick="openAddLessonModal()">
+      + Добавить пару
+    </button>
+    <button class="btn btn-outline btn-sm" onclick="openCloudModal()" title="Настройки облачной базы Firebase">
+      ☁️ Синхронизация
+    </button>
+    <button class="btn btn-warning btn-sm" onclick="saveAllChanges()">
+      💾 Сохранить
+    </button>
+    <button class="btn btn-outline btn-sm" onclick="exitEditMode()">
+      Выйти
+    </button>
+  </div>
 </div>
 
-<div class="table-wrapper">
-  <table class="schedule-table">
-    <thead>
-      <tr>
-        <th class="col-week" rowspan="2">нед</th>
-        <th class="col-time" rowspan="2">Время</th>
-        <th colspan="7">Занятия</th>
-      </tr>
-      <tr>
-        <th>понедельник</th>
-        <th>вторник</th>
-        <th>среда</th>
-        <th>четверг</th>
-        <th>пятница</th>
-        <th>суббота</th>
-        <th>воскресенье</th>
-      </tr>
-    </thead>
-    <tbody id="schedule-body"></tbody>
-  </table>
+<!-- APP WRAPPER -->
+<div class="app-container">
+
+  <!-- LEFT SIDEBAR: CARDS BY SUBJECT & TEACHER -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title-row">
+        <span class="sidebar-title">Предметы и преподаватели</span>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <button class="btn btn-primary btn-sm" id="sidebar-add-btn" onclick="openAddSubjectToCatalogModal()">
+            + Предмет
+          </button>
+          <button class="sidebar-close-btn" onclick="toggleSidebar(false)" title="Закрыть">✕</button>
+        </div>
+      </div>
+      <input type="text" class="sidebar-search" id="sidebar-search" placeholder="Поиск предмета, преподавателя..." oninput="filterSidebarCards()">
+    </div>
+    
+    <div class="sidebar-cards-list" id="sidebar-cards-list">
+      <!-- Generated via renderSidebarCards() in schedule.js -->
+    </div>
+  </aside>
+
+  <!-- MAIN VIEW -->
+  <main class="main-content">
+
+    <!-- 1. SCHEDULE VIEW (DAY-BY-DAY ON MOBILE + 2-WEEK GRID TABLE) -->
+    <div class="grid-view-container" id="view-grid">
+
+      <!-- Submode Bar: Switch between Day-by-Day (phone-friendly) and full Table -->
+      <div class="grid-subnav-bar">
+        <div class="subtabs-segmented">
+          <button class="subtab-btn active" id="btn-subtab-day" onclick="switchGridSubMode('day')">
+            📱 По дням
+          </button>
+          <button class="subtab-btn" id="btn-subtab-table" onclick="switchGridSubMode('table')">
+            📊 Таблица
+          </button>
+        </div>
+
+        <div class="week-selector-group">
+          <button class="week-pill-btn active" id="week-pill-calendar" onclick="selectGridMode('calendar')" title="Календарный вид с конкретными датами">
+            📅 По календарю
+          </button>
+          <button class="week-pill-btn" id="week-pill-1" onclick="selectGridMode('week1')" title="Базовое расписание 1 недели (нечётная) на весь семестр">
+            1️⃣ Базовая (1 нед)
+          </button>
+          <button class="week-pill-btn" id="week-pill-2" onclick="selectGridMode('week2')" title="Базовое расписание 2 недели (чётная) на весь семестр">
+            2️⃣ Базовая (2 нед)
+          </button>
+        </div>
+      </div>
+
+      <!-- DAY-BY-DAY VIEW (MOBILE OPTIMIZED) -->
+      <div class="day-by-day-view" id="day-by-day-view">
+        <!-- Week Navigator for Calendar mode -->
+        <div class="day-view-week-nav" id="day-view-week-nav">
+          <button class="btn btn-outline btn-sm btn-nav-arrow" onclick="changeDayViewWeek(-1)" title="Предыдущая неделя">◀</button>
+          <span class="day-view-week-title" id="day-view-week-title">28 сен – 04 окт (2 неделя)</span>
+          <button class="btn btn-outline btn-sm btn-nav-arrow" onclick="changeDayViewWeek(1)" title="Следующая неделя">▶</button>
+          <button class="btn btn-outline btn-sm" onclick="goToDayViewToday()">Сегодня</button>
+        </div>
+
+        <!-- Banner for Template Mode (Week 1 / Week 2 base schedule) -->
+        <div class="template-info-banner" id="template-info-banner" style="display: none;">
+          <div class="template-info-icon">📋</div>
+          <div class="template-info-text">
+            <strong id="template-banner-title">Базовое расписание 1 недели (нечётная)</strong>
+            <span id="template-banner-desc">Все пары, добавленные здесь, автоматически распространяются на все соответствующие недели всего семестра.</span>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAddLessonModalForSelectedDay()">+ Добавить</button>
+        </div>
+
+        <div class="day-selector-strip" id="day-selector-strip">
+          <!-- Mon..Sun day pills generated via JS -->
+        </div>
+
+        <div class="day-cards-header" id="day-cards-header">
+          <!-- Current selected day summary -->
+        </div>
+
+        <div class="day-lessons-container" id="day-lessons-container">
+          <!-- Lesson cards for selected day -->
+        </div>
+      </div>
+
+      <!-- FULL TABLE VIEW (DESKTOP / HORIZONTAL SCROLL) -->
+      <div class="table-wrapper-outer" id="table-wrapper-outer" style="display: none;">
+        <div class="table-wrapper">
+          <table class="schedule-table">
+            <thead>
+              <tr>
+                <th class="col-week" rowspan="2">нед</th>
+                <th class="col-time" rowspan="2">Время</th>
+                <th colspan="7">Занятия</th>
+              </tr>
+              <tr>
+                <th>понедельник</th>
+                <th>вторник</th>
+                <th>среда</th>
+                <th>четверг</th>
+                <th>пятница</th>
+                <th>суббота</th>
+                <th>воскресенье</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-body">
+              <!-- Generated via buildGrid() in schedule.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="legend-container">
+        <div class="legend-item"><span class="legend-box type-lecture"></span> - лекция</div>
+        <div class="legend-item"><span class="legend-box type-seminar"></span> - семинар</div>
+        <div class="legend-item"><span class="legend-box type-lab"></span> - лабораторная</div>
+        <div class="legend-item"><span class="badge-online">🌐 Дистант</span></div>
+        <button class="btn btn-outline btn-sm" id="btn-reset-all" style="margin-left: auto; display: none;" onclick="resetToDefault()">↺ Сбросить к исходному</button>
+      </div>
+    </div>
+
+    <!-- 2. MONTH CALENDAR VIEW -->
+    <div class="month-view-container" id="view-month">
+      <div class="month-nav-bar">
+        <div class="month-title-wrap">
+          <button class="btn btn-outline btn-sm btn-nav-arrow" onclick="changeMonth(-1)">◀</button>
+          <span class="month-title" id="current-month-display">Октябрь 2026</span>
+          <button class="btn btn-outline btn-sm btn-nav-arrow" onclick="changeMonth(1)">▶</button>
+          <button class="btn btn-outline btn-sm" onclick="goToToday()">Сегодня</button>
+        </div>
+
+      </div>
+
+      <div class="month-calendar-grid">
+        <div class="month-days-header">
+          <div>Пн</div>
+          <div>Вт</div>
+          <div>Ср</div>
+          <div>Чт</div>
+          <div>Пт</div>
+          <div>Сб</div>
+          <div>Вс</div>
+        </div>
+        <div class="month-days-body" id="month-days-body">
+          <!-- Generated via renderMonthCalendar() in schedule.js -->
+        </div>
+      </div>
+
+      <!-- SELECTED DAY CARD IN MONTH (Crucial for mobile tapping!) -->
+      <div class="month-selected-day-panel" id="month-selected-day-panel">
+        <!-- Rendered via renderMonthSelectedDayDetails() -->
+      </div>
+    </div>
+
+  </main>
 </div>
 
-<div class="legend-container">
-  <div class="legend-item"><span class="legend-box type-lecture"></span> - лекция</div>
-  <div class="legend-item"><span class="legend-box type-seminar"></span> - семинар, практическое занятие</div>
-  <div class="legend-item"><span class="legend-box type-lab"></span> - лабораторная</div>
-  <button class="btn-reset" onclick="resetToDefault()">Сбросить к исходному виду</button>
+<!-- MODAL: EDIT / ADD LESSON CARD -->
+<div class="modal-overlay" id="card-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-card-title">Редактировать пару</h3>
+      <button class="modal-close-btn" onclick="closeModal('card-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-lesson-id">
+      <input type="hidden" id="edit-target-date-str" value="">
+      
+      <!-- Scope Selector: Date Override vs Template -->
+      <div class="form-group" id="edit-scope-container">
+        <label style="font-weight: 700; margin-bottom: 6px; display: block;">🎯 Куда применить занятие?</label>
+        <div class="scope-selection-box">
+          <label class="scope-radio-row">
+            <input type="radio" name="edit-target-scope" id="scope-mode-template-both" value="template-both" checked onchange="toggleModalScopeUI()">
+            <div>
+              <strong id="scope-both-title">🔄 В базовое расписание: каждую неделю (1 и 2 нед.)</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">Пара автоматически появится на каждой неделе всего семестра</div>
+            </div>
+          </label>
+          <label class="scope-radio-row">
+            <input type="radio" name="edit-target-scope" id="scope-mode-template" value="template" onchange="toggleModalScopeUI()">
+            <div>
+              <strong id="scope-template-title">📋 В базовое расписание: через неделю (только 1 или 2 нед.)</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">Пара появится на всех чётных или всех нечётных неделях семестра</div>
+            </div>
+          </label>
+          <label class="scope-radio-row">
+            <input type="radio" name="edit-target-scope" id="scope-mode-date" value="date" onchange="toggleModalScopeUI()">
+            <div>
+              <strong id="scope-date-title">⚡ Разово только на эту дату</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">Точечное изменение только для этого дня (разовый перенос / отмена)</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Предмет *</label>
+        <input type="text" id="edit-subject" class="form-control" placeholder="Название предмета">
+      </div>
+
+      <div class="form-group">
+        <label>Преподаватель *</label>
+        <input type="text" id="edit-teacher" class="form-control" placeholder="ФИО преподавателя">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Тип занятия</label>
+          <select id="edit-type" class="form-control">
+            <option value="lab">Лабораторная</option>
+            <option value="seminar">Семинар / Практика</option>
+            <option value="lecture">Лекция</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Формат</label>
+          <select id="edit-is-online" class="form-control">
+            <option value="false">🏫 Очно в аудитории</option>
+            <option value="true">🌐 Дистант (онлайн)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Кабинет / Аудитория</label>
+        <input type="text" id="edit-room" class="form-control" placeholder="например, Б306 или ссылка">
+      </div>
+
+      <div class="form-row" id="template-timing-row">
+        <div class="form-group">
+          <label>Неделя</label>
+          <select id="edit-week" class="form-control">
+            <option value="both">🔄 Обе недели (каждую неделю)</option>
+            <option value="1">1 неделя (нечётная)</option>
+            <option value="2">2 неделя (чётная)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>День недели</label>
+          <select id="edit-day" class="form-control">
+            <option value="0">Понедельник</option>
+            <option value="1">Вторник</option>
+            <option value="2">Среда</option>
+            <option value="3">Четверг</option>
+            <option value="4">Пятница</option>
+            <option value="5">Суббота</option>
+            <option value="6">Воскресенье</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex: 1;">
+          <label>Пара по счёту</label>
+          <select id="edit-time" class="form-control" onchange="handleStandardTimeSelect(this.value)">
+            <option value="0">1 пара (8.00 - 9.35)</option>
+            <option value="1">2 пара (9.50 - 11.25)</option>
+            <option value="2">3 пара (11.40 - 13.15)</option>
+            <option value="3">4 пара (14.00 - 15.35)</option>
+            <option value="4">5 пара (15.50 - 17.25)</option>
+            <option value="5">6 пара (17.40 - 19.15)</option>
+            <option value="6">7 пара (19.25 - 21.00)</option>
+            <option value="custom">⏱️ Своё время...</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Время (можно своё)</label>
+          <input type="text" id="edit-custom-time" class="form-control" placeholder="8.00 - 9.35">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Заметки / тема / задание</label>
+        <input type="text" id="edit-notes" class="form-control" placeholder="например, Сдача задания, аудитория изменена...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="btn-delete-card" onclick="deleteCurrentLesson()">Удалить</button>
+      <button class="btn btn-primary" onclick="saveCardModal()">Сохранить</button>
+    </div>
+  </div>
 </div>
 
-<script>
-const times = [
-  "8.00 - 9.35",
-  "9.50-11.25",
-  "11.40-13.15",
-  "14.00-15.35",
-  "15.50-17.25",
-  "17.40-19.15",
-  "19.25-21.00"
-];
+<!-- MODAL: ADD SUBJECT TO CATALOG -->
+<div class="modal-overlay" id="subject-modal">
+  <div class="modal-box" style="max-width: 420px;">
+    <div class="modal-header">
+      <h3>Добавить предмет в список</h3>
+      <button class="modal-close-btn" onclick="closeModal('subject-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Название предмета *</label>
+        <input type="text" id="new-subj-name" class="form-control" placeholder="Название дисциплины">
+      </div>
+      <div class="form-group">
+        <label>Преподаватель</label>
+        <input type="text" id="new-subj-teacher" class="form-control" placeholder="ФИО преподавателя">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Тип по умолчанию</label>
+          <select id="new-subj-type" class="form-control">
+            <option value="lecture" selected>Лекция</option>
+            <option value="seminar">Семинар</option>
+            <option value="lab">Лабораторная</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Кабинет / Аудитория</label>
+          <input type="text" id="new-subj-room" class="form-control" placeholder="например, Б310">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="checkbox-label" style="margin-top: 4px;">
+          <input type="checkbox" id="new-subj-online">
+          🌐 Дистант (онлайн)
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('subject-modal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveNewSubjectToCatalog()">Добавить предмет</button>
+    </div>
+  </div>
+</div>
 
-const initialLessons = [
-  { id: 0, slot: 1, type: "lab", text: "Методы машинного обучения лаб. Кокин В.М. Б324" },
-  { id: 1, slot: 8, type: "lecture", text: "Обработка и анализ данных лек. Ратманова И.Д. Б014" },
-  { id: 2, slot: 10, type: "seminar", text: "Технологии гибридных суперкомпьютерных вычислений сем. Чернышева Л.П. Б326" },
-  { id: 3, slot: 16, type: "lecture", text: "Архитектура систем искусственного интеллекта лек. ХХ Б310" },
-  { id: 4, slot: 17, type: "lecture", text: "Инструментальные средства для систем искусственного интеллекта лек. Алыкова А.Л. Б017" },
-  { id: 5, slot: 21, type: "seminar", text: "Упр. жизн. циклом ПО сем. Садыков А.М. Б014" },
-  { id: 6, slot: 23, type: "lecture", text: "Упр. жизн. циклом ПО лек. Садыков А.М. Б310" },
-  { id: 7, slot: 25, type: "lecture", text: "Методы машинного обучения лек. Кокин В.М. Б318" },
-  { id: 8, slot: 28, type: "lab", text: "Упр. жизн. циклом ПО лаб. Садыков А.М. Б306" },
-  { id: 9, slot: 32, type: "lab", text: "Обработка и анализ данных лаб. Ратманова И.Д. Б306" },
-  { id: 10, slot: 50, type: "lab", text: "Технологии гибридных суперкомпьютерных вычислений лаб. Чернышева Л.П. Б331(2)" },
-  { id: 11, slot: 51, type: "lab", text: "Инструментальные средства для систем искусственного интеллекта лаб. Алыкова А.Л. Б306" },
-  { id: 12, slot: 57, type: "seminar", text: "Обработка и анализ данных сем. Ратманова И.Д. Б014" },
-  { id: 13, slot: 58, type: "lab", text: "Мет. научн. исслед. лаб. Пантелеев Е.Р. Б306" },
-  { id: 14, slot: 65, type: "lecture", text: "Мет. научн. исслед. лек. Пантелеев Е.Р. Б326" },
-  { id: 15, slot: 66, type: "lecture", text: "Технологии гибридных суперкомпьютерных вычислений лек. Чернышева Л.П. Б310" },
-  { id: 16, slot: 73, type: "seminar", text: "Мет. научн. исслед. сем. Пантелеев Е.Р. Б310" },
-  { id: 17, slot: 80, type: "lab", text: "Методы машинного обучения лаб. Кокин В.М. Б324" },
-  { id: 18, slot: 87, type: "lab", text: "Архитектура систем искусственного интеллекта лаб. Нечаев В.А. Б306" }
-];
+<!-- MODAL: PIN CODE FOR EDIT MODE -->
+<div class="modal-overlay" id="pin-modal">
+  <div class="modal-box" style="max-width: 360px;">
+    <div class="modal-header">
+      <h3>Вход в режим редактирования</h3>
+      <button class="modal-close-btn" onclick="closeModal('pin-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size: 13px; color: var(--text-muted);">
+        Введите пароль для редактирования расписания:
+      </p>
+      <div class="form-group" style="margin-top: 8px;">
+        <label>Пароль</label>
+        <input type="password" id="input-pin" class="form-control" placeholder="Введите пароль" autofocus onkeydown="if(event.key==='Enter') verifyPin()">
+      </div>
+      <div id="pin-error" style="color: #ef4444; font-size: 12px; display: none;">Неверный пароль</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('pin-modal')">Отмена</button>
+      <button class="btn btn-primary" onclick="verifyPin()">Войти</button>
+    </div>
+  </div>
+</div>
 
-let lessons = JSON.parse(JSON.stringify(initialLessons));
+<!-- MODAL: CLOUD SYNC & SHARING BY SINGLE LINK -->
+<div class="modal-overlay" id="cloud-modal">
+  <div class="modal-box" style="max-width: 520px;">
+    <div class="modal-header">
+      <h3>☁️ Синхронизация расписания</h3>
+      <button class="modal-close-btn" onclick="closeModal('cloud-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size: 12.5px; color: var(--text-muted);">
+        Чтобы <strong>все студенты по одной ссылке</strong> видели одинаковое актуальное расписание при любых изменениях, подключите бесплатную облачную базу (Firebase Realtime Database) или делитесь прямой ссылкой:
+      </p>
 
-function buildGrid() {
-  const tbody = document.getElementById("schedule-body");
-  tbody.innerHTML = "";
+      <div class="modal-info-box">
+        <strong>1. Бесплатный Firebase Realtime Database:</strong>
+        <p style="margin-top: 4px; color: var(--text-muted);">
+          Вставьте URL вашей базы данных Firebase ниже:
+        </p>
+        <div style="margin-top: 6px;">
+          <input type="text" id="cloud-db-url" class="form-control" value="" placeholder="https://your-project.firebasedatabase.app/">
+        </div>
+      </div>
 
-  [1, 2].forEach(week => {
-    times.forEach((timeStr, tIdx) => {
-      const tr = document.createElement("tr");
+      <div style="display: flex; gap: 8px; margin-top: 4px;">
+        <button class="btn btn-primary btn-sm" onclick="saveCloudConfig()">💾 Сохранить URL</button>
+        <button class="btn btn-outline btn-sm" onclick="testCloudConnection()">Проверить связь</button>
+      </div>
 
-      if (tIdx === 0) {
-        const tdWeek = document.createElement("td");
-        tdWeek.rowSpan = times.length;
-        tdWeek.className = "week-cell";
-        tdWeek.innerText = week;
-        tr.appendChild(tdWeek);
-      }
+      <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 6px 0;">
 
-      const tdTime = document.createElement("td");
-      tdTime.className = "time-cell";
-      tdTime.innerText = timeStr;
-      tr.appendChild(tdTime);
+      <div class="form-group">
+        <label>Файл расписания (.json):</label>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-outline btn-sm" onclick="exportScheduleJson()">📥 Скачать .json</button>
+          <label class="btn btn-outline btn-sm" style="margin:0; cursor:pointer;">
+            📤 Загрузить .json
+            <input type="file" id="json-file-input" accept=".json" style="display:none;" onchange="importScheduleJson(event)">
+          </label>
+        </div>
+      </div>
 
-      for (let day = 0; day < 7; day++) {
-        const td = document.createElement("td");
-        const slotIdx = (week - 1) * 49 + tIdx * 7 + day;
-        
-        const dropZone = document.createElement("div");
-        dropZone.className = "drop-zone";
-        dropZone.dataset.slot = slotIdx;
+      <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 6px 0;">
 
-        dropZone.addEventListener("dragover", onDragOver);
-        dropZone.addEventListener("dragleave", onDragLeave);
-        dropZone.addEventListener("drop", onDrop);
+      <div class="form-group">
+        <label>Управление данными расписания:</label>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" style="color: #ef4444;" onclick="clearScheduleAll()" title="Очистить все пары для заполнения своей группы с нуля">
+            🗑️ Очистить всё расписание
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="resetToDefault()" title="Восстановить демонстрационные данные">
+            ↺ Вернуть демо-данные
+          </button>
+        </div>
+      </div>
 
-        td.appendChild(dropZone);
-        tr.appendChild(td);
-      }
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('cloud-modal')">Закрыть</button>
+    </div>
+  </div>
+</div>
 
-      tbody.appendChild(tr);
-    });
-  });
-}
+<!-- TOAST NOTIFICATION -->
+<div class="toast" id="app-toast">Уведомление</div>
 
-function loadStateFromUrl() {
-  const hash = window.location.hash.substring(1);
-  if (!hash) return;
-
-  const slots = hash.split("-").map(Number);
-  if (slots.length === lessons.length && slots.every(n => !isNaN(n))) {
-    lessons.forEach((lesson, i) => {
-      lesson.slot = slots[i];
-    });
-  }
-}
-
-function saveStateToUrl() {
-  const hash = lessons.map(l => l.slot).join("-");
-  window.history.replaceState(null, "", `#${hash}`);
-}
-
-function renderLessons() {
-  document.querySelectorAll(".drop-zone").forEach(el => el.innerHTML = "");
-
-  lessons.forEach(lesson => {
-    const zone = document.querySelector(`[data-slot="${lesson.slot}"]`);
-    if (zone) {
-      const card = document.createElement("div");
-      card.className = `lesson-card type-${lesson.type}`;
-      card.draggable = true;
-      card.id = `card-${lesson.id}`;
-      card.innerText = lesson.text;
-
-      card.addEventListener("dragstart", onDragStart);
-      card.addEventListener("dragend", onDragEnd);
-
-      card.addEventListener("touchstart", onTouchStart, { passive: false });
-      card.addEventListener("touchmove", onTouchMove, { passive: false });
-      card.addEventListener("touchend", onTouchEnd);
-
-      zone.appendChild(card);
-    }
-  });
-}
-
-let draggedCardId = null;
-
-function onDragStart(e) {
-  draggedCardId = Number(this.id.replace("card-", ""));
-  this.classList.add("dragging");
-  e.dataTransfer.setData("text/plain", this.id);
-  e.dataTransfer.effectAllowed = "move";
-}
-
-function onDragEnd() {
-  this.classList.remove("dragging");
-  document.querySelectorAll(".drop-zone").forEach(z => z.classList.remove("drag-over"));
-}
-
-function onDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = "move";
-  this.classList.add("drag-over");
-}
-
-function onDragLeave() {
-  this.classList.remove("drag-over");
-}
-
-function onDrop(e) {
-  e.preventDefault();
-  this.classList.remove("drag-over");
-
-  const targetSlot = Number(this.dataset.slot);
-  const cardId = draggedCardId;
-
-  if (cardId === null || isNaN(targetSlot)) return;
-  moveLesson(cardId, targetSlot);
-}
-
-let touchCard = null;
-let touchClone = null;
-let touchShiftX = 0;
-let touchShiftY = 0;
-let lastOverZone = null;
-
-function onTouchStart(e) {
-  const touch = e.touches[0];
-  touchCard = this;
-  const rect = touchCard.getBoundingClientRect();
-
-  touchShiftX = touch.clientX - rect.left;
-  touchShiftY = touch.clientY - rect.top;
-
-  touchClone = touchCard.cloneNode(true);
-  touchClone.style.position = "fixed";
-  touchClone.style.zIndex = "9999";
-  touchClone.style.width = `${rect.width}px`;
-  touchClone.style.height = `${rect.height}px`;
-  touchClone.style.left = `${rect.left}px`;
-  touchClone.style.top = `${rect.top}px`;
-  touchClone.style.opacity = "0.85";
-  touchClone.style.boxShadow = "0 4px 10px rgba(0,0,0,0.3)";
-  touchClone.style.pointerEvents = "none";
-  document.body.appendChild(touchClone);
-
-  touchCard.classList.add("dragging");
-}
-
-function onTouchMove(e) {
-  if (!touchClone) return;
-  e.preventDefault();
-
-  const touch = e.touches[0];
-  touchClone.style.left = `${touch.clientX - touchShiftX}px`;
-  touchClone.style.top = `${touch.clientY - touchShiftY}px`;
-
-  const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-  const currentZone = elemBelow ? elemBelow.closest(".drop-zone") : null;
-
-  if (lastOverZone && lastOverZone !== currentZone) {
-    lastOverZone.classList.remove("drag-over");
-  }
-
-  if (currentZone) {
-    currentZone.classList.add("drag-over");
-    lastOverZone = currentZone;
-  }
-}
-
-function onTouchEnd(e) {
-  if (!touchClone) return;
-
-  if (touchClone.parentNode) {
-    touchClone.parentNode.removeChild(touchClone);
-  }
-  touchClone = null;
-
-  touchCard.classList.remove("dragging");
-
-  const touch = e.changedTouches[0];
-  const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-  const targetZone = elemBelow ? elemBelow.closest(".drop-zone") : null;
-
-  if (lastOverZone) {
-    lastOverZone.classList.remove("drag-over");
-    lastOverZone = null;
-  }
-
-  if (targetZone) {
-    const targetSlot = Number(targetZone.dataset.slot);
-    const cardId = Number(touchCard.id.replace("card-", ""));
-    moveLesson(cardId, targetSlot);
-  }
-
-  touchCard = null;
-}
-
-function moveLesson(cardId, targetSlot) {
-  const currentLesson = lessons.find(l => l.id === cardId);
-  const occupyingLesson = lessons.find(l => l.slot === targetSlot);
-
-  if (occupyingLesson && occupyingLesson.id !== currentLesson.id) {
-    occupyingLesson.slot = currentLesson.slot;
-  }
-
-  currentLesson.slot = targetSlot;
-
-  renderLessons();
-  saveStateToUrl();
-}
-
-function resetToDefault() {
-  lessons = JSON.parse(JSON.stringify(initialLessons));
-  window.history.replaceState(null, "", window.location.pathname);
-  renderLessons();
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  buildGrid();
-  loadStateFromUrl();
-  renderLessons();
-});
-</script>
-
+<script src="js/schedule.js" defer></script>
 </body>
 </html>

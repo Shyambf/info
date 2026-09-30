@@ -53,7 +53,9 @@ document.querySelectorAll('.tile').forEach(tile => {
 });
 
 const prog = document.querySelector('.progress > i');
-setTimeout(()=> { prog.style.width = '62%'; }, 600);
+if (prog) {
+  setTimeout(()=> { prog.style.width = '62%'; }, 600);
+}
 
 function hexToRgba(hex, alpha=1){
   const h = hex.replace('#','');
