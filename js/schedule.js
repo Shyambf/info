@@ -152,12 +152,17 @@ let dayViewMonday = getMonday(todayDate);
 let selectedGridDayOfWeek = (todayDate.getDay() + 6) % 7; // 0=Mon..6=Sun
 let selectedGridWeek = getSemesterWeekForDate(todayDate);
 
-// Firebase Realtime Database URL: Injected via GitHub Actions secret FIREBASE_URL or loaded from localStorage
+// Firebase Realtime Database URL: Injected via GitHub Actions secret FIREBASE_URL or fallback to default database
 const INJECTED_FIREBASE_URL = "__FIREBASE_URL_PLACEHOLDER__";
 const DEFAULT_FIREBASE_URL = (INJECTED_FIREBASE_URL && !INJECTED_FIREBASE_URL.startsWith("__"))
   ? INJECTED_FIREBASE_URL
-  : (localStorage.getItem("schedule_cloud_url") || "");
-let cloudDatabaseUrl = localStorage.getItem("schedule_cloud_url") || DEFAULT_FIREBASE_URL;
+  : "https://schedule-c8c1f-default-rtdb.europe-west1.firebasedatabase.app/";
+
+let savedCloudUrl = localStorage.getItem("schedule_cloud_url");
+if (!savedCloudUrl || savedCloudUrl.trim() === "" || savedCloudUrl.includes("your-project")) {
+  savedCloudUrl = DEFAULT_FIREBASE_URL;
+}
+let cloudDatabaseUrl = savedCloudUrl;
 
 function getCloudEndpoint() {
   if (!cloudDatabaseUrl) return "";
@@ -475,29 +480,39 @@ function initRealtimeListener() {
   if (!url || typeof EventSource === "undefined") return;
   try {
     const eventSource = new EventSource(url);
-    eventSource.addEventListener("put", (e) => {
+    const handleRemoteUpdate = (e) => {
       try {
         const payload = JSON.parse(e.data);
-        if (!payload || !payload.data || isEditMode) return;
-        const data = payload.data;
-        if (Array.isArray(data)) {
-          lessons = data;
-        } else if (data && typeof data === 'object') {
-          if (Array.isArray(data.lessons)) lessons = data.lessons;
-          if (data.dateOverrides && typeof data.dateOverrides === 'object') {
-            dateOverrides = data.dateOverrides;
+        if (!payload || isEditMode) return;
+
+        if (payload.path === "/" && payload.data) {
+          const data = payload.data;
+          if (Array.isArray(data)) {
+            lessons = data;
+          } else if (data && typeof data === 'object') {
+            if (Array.isArray(data.lessons)) lessons = data.lessons;
+            if (data.dateOverrides && typeof data.dateOverrides === 'object') {
+              dateOverrides = data.dateOverrides;
+            } else {
+              dateOverrides = {};
+            }
+            if (Array.isArray(data.subjectsCatalog)) {
+              subjectsCatalog = data.subjectsCatalog;
+            }
           }
-          if (Array.isArray(data.subjectsCatalog)) {
-            subjectsCatalog = data.subjectsCatalog;
-          }
+          saveLocalState();
+          renderAllViews();
+          showToast("Расписание обновлено 🔄");
+        } else if (payload.path && payload.path !== "/") {
+          fetchFromCloud();
         }
-        saveLocalState();
-        renderAllViews();
-        showToast("Расписание обновлено 🔄");
       } catch(err) {
         // ignore
       }
-    });
+    };
+
+    eventSource.addEventListener("put", handleRemoteUpdate);
+    eventSource.addEventListener("patch", handleRemoteUpdate);
   } catch(err) {
     console.warn("EventSource error:", err);
   }
