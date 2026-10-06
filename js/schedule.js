@@ -974,7 +974,7 @@ function buildGrid() {
       }
 
       const tdTime = document.createElement("td");
-      tdTime.className = "col-time";
+      tdTime.className = "col-time time-cell";
       tdTime.innerHTML = `<strong>${tIdx + 1}</strong><br><small style="color:var(--text-muted);">${timeStr}</small>`;
       tr.appendChild(tdTime);
 

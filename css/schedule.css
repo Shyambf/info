@@ -1918,19 +1918,33 @@ body.dark-theme thead th {
 
 body.dark-theme thead th.col-week,
 body.dark-theme thead th.col-time {
-  background-color: #162032;
-  border-color: #243248;
-  color: #f8fafc;
+  background-color: #162032 !important;
+  border-color: #243248 !important;
+  color: #f8fafc !important;
 }
 
+body.dark-theme .col-time,
 body.dark-theme .time-cell {
-  background-color: #111726;
-  color: #cbd5e1;
+  background-color: #111726 !important;
+  border-color: #243248 !important;
+  color: #cbd5e1 !important;
 }
 
+body.dark-theme .col-time strong,
+body.dark-theme .time-cell strong {
+  color: #f8fafc !important;
+}
+
+body.dark-theme .col-time small,
+body.dark-theme .time-cell small {
+  color: #94a3b8 !important;
+}
+
+body.dark-theme .col-week,
 body.dark-theme .week-cell {
-  background-color: #111726;
-  color: #60a5fa;
+  background-color: #111726 !important;
+  border-color: #243248 !important;
+  color: #60a5fa !important;
 }
 
 body.dark-theme .schedule-table td.weekend {
