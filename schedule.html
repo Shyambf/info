@@ -31,6 +31,9 @@
     </div>
 
     <div class="header-right">
+      <button class="btn btn-outline btn-sm" id="btn-export-calendar" onclick="openExportCalendarModal()" title="Экспорт в Google Календарь">
+        📅 <span class="btn-text">В календарь</span>
+      </button>
       <button class="btn btn-outline btn-sm btn-icon-only" id="btn-theme-toggle" onclick="toggleTheme()" title="Переключить тему (светлая / тёмная)">
         <span id="theme-icon">🌙</span> <span class="btn-text" id="theme-text">Тёмная</span>
       </button>
@@ -167,6 +170,17 @@
       <div class="table-wrapper-outer" id="table-wrapper-outer" style="display: none;">
         <div class="table-wrapper">
           <table class="schedule-table">
+            <colgroup>
+              <col class="col-week">
+              <col class="col-time">
+              <col class="col-day">
+              <col class="col-day">
+              <col class="col-day">
+              <col class="col-day">
+              <col class="col-day">
+              <col class="col-day">
+              <col class="col-day">
+            </colgroup>
             <thead>
               <tr>
                 <th class="col-week" rowspan="2">нед</th>
@@ -488,6 +502,94 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="closeModal('cloud-modal')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EXPORT TO GOOGLE CALENDAR -->
+<div class="modal-overlay" id="export-calendar-modal">
+  <div class="modal-box" style="max-width: 520px;">
+    <div class="modal-header">
+      <h3>📅 Экспорт в Google Календарь</h3>
+      <button class="modal-close-btn" onclick="closeModal('export-calendar-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px;">
+        Выберите период, чтобы добавить пары в <strong>Google Календарь</strong>, Яндекс Календарь, Apple Календарь или Outlook:
+      </p>
+
+      <div class="calendar-period-options">
+        <label class="scope-radio-row">
+          <input type="radio" name="export-period" value="week" checked onchange="updateExportCalendarPreview()">
+          <div>
+            <strong>На эту неделю (7 дней)</strong>
+            <div style="font-size: 11px; color: var(--text-muted);" id="export-desc-week">С понедельника по воскресенье текущей недели</div>
+          </div>
+        </label>
+
+        <label class="scope-radio-row">
+          <input type="radio" name="export-period" value="2weeks" onchange="updateExportCalendarPreview()">
+          <div>
+            <strong>На 2 недели (14 дней)</strong>
+            <div style="font-size: 11px; color: var(--text-muted);" id="export-desc-2weeks">Текущая неделя и следующая (2 полных цикла расписания)</div>
+          </div>
+        </label>
+
+        <label class="scope-radio-row">
+          <input type="radio" name="export-period" value="month" onchange="updateExportCalendarPreview()">
+          <div>
+            <strong>На месяц (4 недели / 28 дней)</strong>
+            <div style="font-size: 11px; color: var(--text-muted);" id="export-desc-month">Ближайшие 4 недели расписания</div>
+          </div>
+        </label>
+
+        <label class="scope-radio-row">
+          <input type="radio" name="export-period" value="semester" onchange="updateExportCalendarPreview()">
+          <div>
+            <strong>На весь семестр</strong>
+            <div style="font-size: 11px; color: var(--text-muted);" id="export-desc-semester">Все учебные недели семестра (до конца декабря)</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="modal-info-box" style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 11.5px; color: var(--text-muted);">Даты: <strong id="export-dates-label" style="color: var(--text-main);">...</strong></div>
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;">Занятий к экспорту: <strong id="export-count-label" style="color: var(--primary);">0 пар</strong></div>
+        </div>
+        <span style="font-size: 26px;">🗓️</span>
+      </div>
+
+      <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+        <label class="checkbox-label" style="font-size: 12px; cursor: pointer;">
+          <input type="checkbox" id="export-opt-reminders" checked>
+          🔔 Напоминание в календаре за 15 минут до пары
+        </label>
+        <label class="checkbox-label" style="font-size: 12px; cursor: pointer;">
+          <input type="checkbox" id="export-opt-details" checked>
+          📍 Указывать преподавателя, аудиторию и статус «Дистант»
+        </label>
+      </div>
+
+      <div class="export-instruction-box">
+        <strong style="color: var(--primary);">💡 Как импортировать в Google Календарь:</strong>
+        <ol style="margin: 4px 0 0 16px; padding: 0;">
+          <li>Нажмите <strong>«📥 Скачать .ics»</strong>.</li>
+          <li><strong>На телефоне (Android/iOS):</strong> нажмите на скачанный файл — он автоматически предложит добавить пары в Google / Apple Календарь.</li>
+          <li><strong>На компьютере:</strong> нажмите кнопку <strong>«🌐 Открыть Google Календарь»</strong> и выберите скачанный файл в разделе «Импорт».</li>
+        </ol>
+      </div>
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+      <button class="btn btn-outline" onclick="closeModal('export-calendar-modal')">Закрыть</button>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="https://calendar.google.com/calendar/u/0/r/settings/export" target="_blank" rel="noopener noreferrer" class="btn btn-outline" title="Перейти на страницу импорта Google Календаря">
+          🌐 Открыть Google Календарь ↗
+        </a>
+        <button class="btn btn-primary" onclick="executeCalendarExport()">
+          📥 Скачать .ics
+        </button>
+      </div>
     </div>
   </div>
 </div>

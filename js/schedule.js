@@ -1313,6 +1313,7 @@ function renderCalendarDayCell(container, date, isOtherMonth, filterOverridesOnl
     const timeDisplay = getLessonTimeDisplay(l);
     const timeStart = timeDisplay.split('-')[0].trim();
 
+    pill.title = `${timeDisplay} • ${l.subject}${l.teacher ? ' (' + l.teacher + ')' : ''}`;
     pill.innerHTML = `
       <strong>${timeStart}</strong> ${escapeHtml(l.subject)}
     `;
@@ -1959,4 +1960,296 @@ function escapeHtml(str) {
 function capitalizeFirstLetter(str) {
   if (!str) return "";
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// ==========================================
+// GOOGLE CALENDAR / ICALENDAR (.ICS) EXPORT
+// ==========================================
+
+function openExportCalendarModal() {
+  openModal('export-calendar-modal');
+  updateExportCalendarPreview();
+}
+
+function getExportDateRange(periodType) {
+  const base = new Date();
+  const currentMonday = getMonday(base);
+  let startDate = new Date(currentMonday);
+  let endDate = new Date(currentMonday);
+
+  switch (periodType) {
+    case 'week':
+      endDate.setDate(startDate.getDate() + 6); // Monday to Sunday (7 days)
+      break;
+    case '2weeks':
+      endDate.setDate(startDate.getDate() + 13); // 2 full weeks (14 days)
+      break;
+    case 'month':
+      endDate.setDate(startDate.getDate() + 27); // 4 full weeks (28 days)
+      break;
+    case 'semester':
+      startDate = new Date(SEMESTER_CONFIG.startDate);
+      endDate = new Date(SEMESTER_CONFIG.endDate);
+      break;
+    default:
+      endDate.setDate(startDate.getDate() + 6);
+  }
+
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(23, 59, 59, 999);
+
+  return { startDate, endDate };
+}
+
+function getEventsForDateRange(startDate, endDate) {
+  const events = [];
+  const cur = new Date(startDate);
+  cur.setHours(0, 0, 0, 0);
+  const endLimit = new Date(endDate);
+  endLimit.setHours(23, 59, 59, 999);
+
+  while (cur <= endLimit) {
+    const dayLessons = getLessonsForDate(cur);
+    if (dayLessons && dayLessons.length > 0) {
+      dayLessons.forEach(l => {
+        events.push({
+          date: new Date(cur),
+          lesson: l
+        });
+      });
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return events;
+}
+
+function getPluralPairs(n) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 19) return 'пар';
+  if (mod10 === 1) return 'пара';
+  if (mod10 >= 2 && mod10 <= 4) return 'пары';
+  return 'пар';
+}
+
+function updateExportCalendarPreview() {
+  const checkedRadio = document.querySelector('input[name="export-period"]:checked');
+  const period = checkedRadio ? checkedRadio.value : 'week';
+
+  const { startDate, endDate } = getExportDateRange(period);
+  const events = getEventsForDateRange(startDate, endDate);
+
+  const startDay = startDate.getDate();
+  const startMonth = getMonthShort(startDate.getMonth());
+  const endDay = endDate.getDate();
+  const endMonth = getMonthShort(endDate.getMonth());
+  const endYear = endDate.getFullYear();
+
+  const datesText = `${startDay} ${startMonth} – ${endDay} ${endMonth} ${endYear} г.`;
+  const datesLabel = document.getElementById('export-dates-label');
+  if (datesLabel) datesLabel.innerText = datesText;
+
+  const countLabel = document.getElementById('export-count-label');
+  if (countLabel) {
+    countLabel.innerText = `${events.length} ${getPluralPairs(events.length)}`;
+  }
+
+  // Update dynamic dates under radio options
+  const descWeek = document.getElementById('export-desc-week');
+  if (descWeek) {
+    const r = getExportDateRange('week');
+    const evs = getEventsForDateRange(r.startDate, r.endDate);
+    descWeek.innerText = `${r.startDate.getDate()} ${getMonthShort(r.startDate.getMonth())} – ${r.endDate.getDate()} ${getMonthShort(r.endDate.getMonth())} (${evs.length} ${getPluralPairs(evs.length)})`;
+  }
+  const desc2Weeks = document.getElementById('export-desc-2weeks');
+  if (desc2Weeks) {
+    const r = getExportDateRange('2weeks');
+    const evs = getEventsForDateRange(r.startDate, r.endDate);
+    desc2Weeks.innerText = `${r.startDate.getDate()} ${getMonthShort(r.startDate.getMonth())} – ${r.endDate.getDate()} ${getMonthShort(r.endDate.getMonth())} (${evs.length} ${getPluralPairs(evs.length)})`;
+  }
+  const descMonth = document.getElementById('export-desc-month');
+  if (descMonth) {
+    const r = getExportDateRange('month');
+    const evs = getEventsForDateRange(r.startDate, r.endDate);
+    descMonth.innerText = `${r.startDate.getDate()} ${getMonthShort(r.startDate.getMonth())} – ${r.endDate.getDate()} ${getMonthShort(r.endDate.getMonth())} (${evs.length} ${getPluralPairs(evs.length)})`;
+  }
+  const descSem = document.getElementById('export-desc-semester');
+  if (descSem) {
+    const r = getExportDateRange('semester');
+    const evs = getEventsForDateRange(r.startDate, r.endDate);
+    descSem.innerText = `01 сен – 31 дек (${evs.length} ${getPluralPairs(evs.length)})`;
+  }
+}
+
+function parseLessonTimes(l) {
+  const timeStr = getLessonTimeDisplay(l);
+  if (timeStr) {
+    const parts = timeStr.split(/[-–—]/);
+    if (parts.length >= 2) {
+      const m1 = parts[0].trim().match(/(\d{1,2})[:.](\d{2})/);
+      const m2 = parts[1].trim().match(/(\d{1,2})[:.](\d{2})/);
+      if (m1 && m2) {
+        return {
+          startH: parseInt(m1[1], 10),
+          startM: parseInt(m1[2], 10),
+          endH: parseInt(m2[1], 10),
+          endM: parseInt(m2[2], 10)
+        };
+      }
+    }
+  }
+
+  const tIdx = (l.timeIndex !== undefined && l.timeIndex >= 0) ? l.timeIndex : (l.slot !== undefined ? Math.floor((l.slot % 49) / 7) : 0);
+  const defaultStarts = [8, 9, 11, 14, 15, 17, 19];
+  const defaultStartM = [0, 50, 40, 0, 50, 40, 25];
+  const defaultEnds = [9, 11, 13, 15, 17, 19, 21];
+  const defaultEndM = [35, 25, 15, 35, 25, 15, 0];
+  const idx = Math.min(Math.max(tIdx, 0), 6);
+  return {
+    startH: defaultStarts[idx],
+    startM: defaultStartM[idx],
+    endH: defaultEnds[idx],
+    endM: defaultEndM[idx]
+  };
+}
+
+function formatIcsDateTime(date, h, m) {
+  const y = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const hours = String(h).padStart(2, '0');
+  const mins = String(m).padStart(2, '0');
+  return `${y}${month}${d}T${hours}${mins}00`;
+}
+
+function escapeIcsText(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
+function generateIcsContent(events, options) {
+  const now = new Date();
+  const nowStamp = formatIcsDateTime(now, now.getUTCHours(), now.getUTCMinutes()) + 'Z';
+
+  let ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Student Schedule Web//RU',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:Расписание занятий',
+    'X-WR-TIMEZONE:Europe/Moscow'
+  ];
+
+  events.forEach(({ date, lesson }, idx) => {
+    const t = parseLessonTimes(lesson);
+    const dtStart = formatIcsDateTime(date, t.startH, t.startM);
+    const dtEnd = formatIcsDateTime(date, t.endH, t.endM);
+
+    const typeRu = lesson.type === 'lab' ? 'Лабораторная' : (lesson.type === 'seminar' ? 'Семинар' : 'Лекция');
+    const typeShort = lesson.type === 'lab' ? 'Лаб' : (lesson.type === 'seminar' ? 'Сем' : 'Лек');
+    const onlineBadge = lesson.isOnline ? ' [Дистант]' : '';
+
+    const summary = `${typeShort}: ${lesson.subject}${onlineBadge}`;
+
+    let descLines = [];
+    if (options.includeDetails) {
+      descLines.push(`Предмет: ${lesson.subject}`);
+      descLines.push(`Тип: ${typeRu}`);
+      if (lesson.teacher) descLines.push(`Преподаватель: ${lesson.teacher}`);
+      if (lesson.room) descLines.push(`Аудитория: ${lesson.room}`);
+      if (lesson.isOnline) descLines.push(`Формат: Онлайн (Дистант)`);
+      if (lesson.notes) descLines.push(`Заметки: ${lesson.notes}`);
+    } else {
+      descLines.push(`Занятие: ${lesson.subject}`);
+    }
+    const description = escapeIcsText(descLines.join('\n'));
+    const location = escapeIcsText(lesson.isOnline ? 'Дистант (онлайн)' : (lesson.room || ''));
+    const uid = `lesson-${dtStart}-${idx}-${lesson.id || 'x'}@schedule-app`;
+
+    ics.push('BEGIN:VEVENT');
+    ics.push(`UID:${uid}`);
+    ics.push(`DTSTAMP:${nowStamp}`);
+    ics.push(`DTSTART:${dtStart}`);
+    ics.push(`DTEND:${dtEnd}`);
+    ics.push(`SUMMARY:${escapeIcsText(summary)}`);
+    if (description) ics.push(`DESCRIPTION:${description}`);
+    if (location) ics.push(`LOCATION:${location}`);
+    ics.push('STATUS:CONFIRMED');
+
+    if (options.includeReminders) {
+      ics.push('BEGIN:VALARM');
+      ics.push('ACTION:DISPLAY');
+      ics.push(`DESCRIPTION:Напоминание: ${escapeIcsText(lesson.subject)} через 15 мин`);
+      ics.push('TRIGGER:-PT15M');
+      ics.push('END:VALARM');
+    }
+
+    ics.push('END:VEVENT');
+  });
+
+  ics.push('END:VCALENDAR');
+  return ics.join('\r\n');
+}
+
+async function executeCalendarExport() {
+  const checkedRadio = document.querySelector('input[name="export-period"]:checked');
+  const period = checkedRadio ? checkedRadio.value : 'week';
+
+  const { startDate, endDate } = getExportDateRange(period);
+  const events = getEventsForDateRange(startDate, endDate);
+
+  if (!events || events.length === 0) {
+    showToast('⚠️ В выбранном периоде нет занятий для экспорта');
+    return;
+  }
+
+  const optReminders = document.getElementById('export-opt-reminders');
+  const optDetails = document.getElementById('export-opt-details');
+
+  const options = {
+    includeReminders: optReminders ? optReminders.checked : true,
+    includeDetails: optDetails ? optDetails.checked : true
+  };
+
+  const icsString = generateIcsContent(events, options);
+  const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8' });
+  const filename = `raspisanie_${period}_${formatDateKey(startDate)}.ics`;
+
+  // On mobile devices, check if Web Share API with files is supported
+  const file = new File([blob], filename, { type: 'text/calendar' });
+  if (navigator.canShare && navigator.canShare({ files: [file] }) && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'Расписание занятий',
+        text: `Экспорт расписания (${events.length} ${getPluralPairs(events.length)})`
+      });
+      showToast('✅ Расписание открыто для добавления в Календарь');
+      closeModal('export-calendar-modal');
+      return;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.warn('Share error, falling back to download:', err);
+      } else {
+        return;
+      }
+    }
+  }
+
+  // Desktop or fallback: Trigger file download
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+  showToast(`📥 Скачан файл «${filename}» (${events.length} ${getPluralPairs(events.length)})`);
 }

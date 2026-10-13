@@ -901,6 +901,20 @@ table.schedule-table {
   table-layout: fixed;
   font-size: 11px;
   background-color: #fff;
+  box-sizing: border-box;
+}
+
+table.schedule-table col.col-week {
+  width: 42px;
+}
+
+table.schedule-table col.col-time {
+  width: 90px;
+}
+
+table.schedule-table col.col-day {
+  width: calc((100% - 132px) / 7);
+  min-width: 98px;
 }
 
 table.schedule-table th, 
@@ -910,6 +924,21 @@ table.schedule-table td {
   vertical-align: middle;
   padding: 0;
   height: 48px;
+  box-sizing: border-box;
+}
+
+table.schedule-table th:not(.col-week):not(.col-time) {
+  width: calc((100% - 132px) / 7);
+  min-width: 98px;
+  box-sizing: border-box;
+}
+
+table.schedule-table td.schedule-slot {
+  width: calc((100% - 132px) / 7);
+  min-width: 98px;
+  max-width: calc((100% - 132px) / 7);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 thead th {
@@ -917,23 +946,30 @@ thead th {
   font-weight: 700;
   color: #0f172a;
   padding: 4px 2px;
+  box-sizing: border-box;
 }
 
 /* Sticky Time & Week columns */
 .col-week {
   width: 42px;
+  min-width: 42px;
+  max-width: 42px;
   position: sticky;
   left: 0;
   z-index: 5;
   background: #f7faff;
+  box-sizing: border-box;
 }
 
 .col-time {
   width: 90px;
+  min-width: 90px;
+  max-width: 90px;
   position: sticky;
   left: 42px;
   z-index: 5;
   background: #f7faff;
+  box-sizing: border-box;
 }
 
 thead th.col-week {
@@ -1131,7 +1167,9 @@ body.edit-mode .lesson-card:hover .card-quick-del-btn {
 
 .month-days-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  width: 100%;
+  box-sizing: border-box;
   background: #f1f5f9;
   border-bottom: 1px solid var(--border-color);
   text-align: center;
@@ -1141,9 +1179,19 @@ body.edit-mode .lesson-card:hover .card-quick-del-btn {
   color: #475569;
 }
 
+.month-days-header div {
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
 .month-days-body {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  width: 100%;
+  box-sizing: border-box;
   grid-auto-rows: minmax(70px, auto);
 }
 
@@ -1158,6 +1206,11 @@ body.edit-mode .lesson-card:hover .card-quick-del-btn {
   cursor: pointer;
   transition: all 0.1s ease;
   min-height: 70px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
   user-select: none;
 }
 
@@ -1206,10 +1259,15 @@ body.edit-mode .lesson-card:hover .card-quick-del-btn {
   font-size: 11px;
   font-weight: 600;
   margin-bottom: 2px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .day-number {
   color: var(--text-main);
+  flex-shrink: 0;
 }
 
 .day-week-badge {
@@ -1219,6 +1277,7 @@ body.edit-mode .lesson-card:hover .card-quick-del-btn {
   border-radius: 3px;
   background: #e2e8f0;
   color: #475569;
+  flex-shrink: 0;
 }
 
 .day-dots-container {
@@ -1226,12 +1285,16 @@ body.edit-mode .lesson-card:hover .card-quick-del-btn {
   flex-wrap: wrap;
   gap: 2px;
   margin-top: 2px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .day-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .day-dot-lab { background: #9333ea; }
@@ -1243,6 +1306,10 @@ body.edit-mode .lesson-card:hover .card-quick-del-btn {
   flex-direction: column;
   gap: 3px;
   flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .month-lesson-pill {
@@ -1254,6 +1321,11 @@ body.edit-mode .lesson-card:hover .card-quick-del-btn {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
 }
 
 .month-lesson-pill.pill-lab {
@@ -1371,6 +1443,17 @@ body.edit-mode .lesson-card:hover .card-quick-del-btn {
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 12px;
+  color: var(--text-main);
+}
+
+.export-instruction-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(37, 99, 235, 0.05);
+  border-radius: 8px;
+  border: 1px dashed var(--primary);
+  font-size: 11.5px;
+  line-height: 1.5;
   color: var(--text-main);
 }
 
@@ -2074,6 +2157,12 @@ body.dark-theme select.form-control option {
 body.dark-theme .modal-info-box {
   background: #0d1422;
   border-color: #243248;
+  color: #f8fafc;
+}
+
+body.dark-theme .export-instruction-box {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
   color: #f8fafc;
 }
 
