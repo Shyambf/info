@@ -222,7 +222,28 @@
           <button class="btn btn-outline btn-sm btn-nav-arrow" onclick="changeMonth(1)">▶</button>
           <button class="btn btn-outline btn-sm" onclick="goToToday()">Сегодня</button>
         </div>
+        <div class="month-filters-wrap">
+          <div class="month-filter-group" title="Фильтр по предмету">
+            <span class="month-filter-icon">📚</span>
+            <select id="calendar-filter-subject" class="month-filter-select" onchange="onCalendarFilterChange()">
+              <option value="">Все предметы</option>
+            </select>
+          </div>
+          <div class="month-filter-group" title="Фильтр по преподавателю">
+            <span class="month-filter-icon">👤</span>
+            <select id="calendar-filter-teacher" class="month-filter-select" onchange="onCalendarFilterChange()">
+              <option value="">Все преподаватели</option>
+            </select>
+          </div>
+          <button class="btn btn-outline btn-sm btn-clear-filter" id="btn-clear-calendar-filters" onclick="clearCalendarFilters()" style="display: none;" title="Сбросить фильтры">
+            ✕ Сброс
+          </button>
+        </div>
+      </div>
 
+      <div class="calendar-active-filter-banner" id="calendar-active-filter-banner" style="display: none;">
+        <span>🔍 Показаны пары: <strong id="calendar-active-filter-text"></strong></span>
+        <button class="btn btn-outline btn-sm" onclick="clearCalendarFilters()" style="padding: 2px 8px; font-size: 11px;">Сбросить фильтр</button>
       </div>
 
       <div class="month-calendar-grid">

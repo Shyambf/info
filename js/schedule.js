@@ -143,6 +143,8 @@ let currentView = 'grid'; // 'grid' | 'month'
 let gridSubMode = (window.innerWidth <= 768) ? 'day' : 'day';
 let gridWeekMode = 'calendar'; // 'calendar' (exact date) | 'week1' | 'week2' (template)
 let selectedSubjectHighlight = null;
+let calendarFilterSubject = "";
+let calendarFilterTeacher = "";
 
 // Date & Navigation state
 const todayDate = new Date();
@@ -1216,7 +1218,104 @@ function goToToday() {
   renderMonthCalendar();
 }
 
+function getUniqueSubjects() {
+  const set = new Set();
+  lessons.forEach(l => { if (l.subject && l.subject.trim()) set.add(l.subject.trim()); });
+  Object.values(dateOverrides || {}).forEach(arr => {
+    (arr || []).forEach(l => { if (l.subject && l.subject.trim()) set.add(l.subject.trim()); });
+  });
+  subjectsCatalog.forEach(s => { if (s.name && s.name.trim()) set.add(s.name.trim()); });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'ru'));
+}
+
+function getUniqueTeachers() {
+  const set = new Set();
+  lessons.forEach(l => { if (l.teacher && l.teacher.trim()) set.add(l.teacher.trim()); });
+  Object.values(dateOverrides || {}).forEach(arr => {
+    (arr || []).forEach(l => { if (l.teacher && l.teacher.trim()) set.add(l.teacher.trim()); });
+  });
+  subjectsCatalog.forEach(s => { if (s.teacher && s.teacher.trim()) set.add(s.teacher.trim()); });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'ru'));
+}
+
+function populateCalendarFilters() {
+  const subjSelect = document.getElementById("calendar-filter-subject");
+  const teacherSelect = document.getElementById("calendar-filter-teacher");
+  if (!subjSelect || !teacherSelect) return;
+
+  const currentSubj = calendarFilterSubject;
+  const currentTeacher = calendarFilterTeacher;
+
+  // Subjects
+  const subjects = getUniqueSubjects();
+  let subjHtml = `<option value="">📚 Все предметы (${subjects.length})</option>`;
+  subjects.forEach(s => {
+    const sel = (s === currentSubj) ? "selected" : "";
+    subjHtml += `<option value="${escapeHtml(s)}" ${sel}>${escapeHtml(s)}</option>`;
+  });
+  subjSelect.innerHTML = subjHtml;
+
+  // Teachers
+  const teachers = getUniqueTeachers();
+  let teacherHtml = `<option value="">👤 Все преподаватели (${teachers.length})</option>`;
+  teachers.forEach(t => {
+    const sel = (t === currentTeacher) ? "selected" : "";
+    teacherHtml += `<option value="${escapeHtml(t)}" ${sel}>${escapeHtml(t)}</option>`;
+  });
+  teacherSelect.innerHTML = teacherHtml;
+
+  updateClearFilterButton();
+}
+
+function onCalendarFilterChange() {
+  const subjSelect = document.getElementById("calendar-filter-subject");
+  const teacherSelect = document.getElementById("calendar-filter-teacher");
+
+  calendarFilterSubject = subjSelect ? subjSelect.value : "";
+  calendarFilterTeacher = teacherSelect ? teacherSelect.value : "";
+
+  updateClearFilterButton();
+  renderMonthCalendar();
+}
+
+function clearCalendarFilters() {
+  calendarFilterSubject = "";
+  calendarFilterTeacher = "";
+
+  const subjSelect = document.getElementById("calendar-filter-subject");
+  const teacherSelect = document.getElementById("calendar-filter-teacher");
+  if (subjSelect) subjSelect.value = "";
+  if (teacherSelect) teacherSelect.value = "";
+
+  updateClearFilterButton();
+  renderMonthCalendar();
+  showToast("Фильтры календаря сброшены");
+}
+
+function updateClearFilterButton() {
+  const btn = document.getElementById("btn-clear-calendar-filters");
+  const banner = document.getElementById("calendar-active-filter-banner");
+  const textSpan = document.getElementById("calendar-active-filter-text");
+
+  const hasFilter = !!(calendarFilterSubject || calendarFilterTeacher);
+  if (btn) btn.style.display = hasFilter ? "inline-flex" : "none";
+
+  if (banner && textSpan) {
+    if (hasFilter) {
+      banner.style.display = "flex";
+      const parts = [];
+      if (calendarFilterSubject) parts.push(`предмет: «${calendarFilterSubject}»`);
+      if (calendarFilterTeacher) parts.push(`преподаватель: «${calendarFilterTeacher}»`);
+      textSpan.innerText = parts.join(", ");
+    } else {
+      banner.style.display = "none";
+    }
+  }
+}
+
 function renderMonthCalendar() {
+  populateCalendarFilters();
+
   const container = document.getElementById("month-days-body");
   if (!container) return;
   container.innerHTML = "";
@@ -1284,14 +1383,32 @@ function renderCalendarDayCell(container, date, isOtherMonth, filterOverridesOnl
   if (isSelected) cell.classList.add("is-selected");
 
   const weekNum = getSemesterWeekForDate(date);
-  const dayLessons = getLessonsForDate(date);
+  let dayLessons = getLessonsForDate(date);
+
+  // Apply filters if set
+  const hasFilter = !!(calendarFilterSubject || calendarFilterTeacher);
+  if (calendarFilterSubject) {
+    dayLessons = dayLessons.filter(l => (l.subject || "").trim().toLowerCase() === calendarFilterSubject.toLowerCase());
+  }
+  if (calendarFilterTeacher) {
+    dayLessons = dayLessons.filter(l => (l.teacher || "").trim().toLowerCase() === calendarFilterTeacher.toLowerCase());
+  }
+
+  if (hasFilter && dayLessons.length > 0) {
+    cell.classList.add("has-filter-match");
+  }
 
   const top = document.createElement("div");
   top.className = "day-cell-top";
   top.innerHTML = `
-    <span class="day-number">${date.getDate()}</span>
-    <span class="day-week-badge">${weekNum} нед</span>
-    ${hasOv ? '<span class="badge-override-mini" title="Точечные изменения на этот день">⚡</span>' : ''}
+    <div style="display: flex; align-items: center; gap: 4px; min-width: 0;">
+      <span class="day-number">${date.getDate()}</span>
+      ${isToday ? '<span class="badge-today-pill">Сегодня</span>' : ''}
+    </div>
+    <div style="display: flex; align-items: center; gap: 3px; flex-shrink: 0;">
+      <span class="day-week-badge">${weekNum} нед</span>
+      ${hasOv ? '<span class="badge-override-mini" title="Точечные изменения на этот день">⚡</span>' : ''}
+    </div>
   `;
   cell.appendChild(top);
 
@@ -1349,17 +1466,26 @@ function renderMonthSelectedDayDetails() {
   const fullDay = dayNames[dayOfWeek];
   const dateFormatted = `${d.getDate()} ${getMonthGenitive(d.getMonth())} ${d.getFullYear()} г.`;
   const hasOv = hasDateOverride(d);
-  const dayLessons = getLessonsForDate(d);
+  const allDayLessons = getLessonsForDate(d);
+
+  let displayedLessons = allDayLessons;
+  const hasFilter = !!(calendarFilterSubject || calendarFilterTeacher);
+  if (calendarFilterSubject) {
+    displayedLessons = displayedLessons.filter(l => (l.subject || "").trim().toLowerCase() === calendarFilterSubject.toLowerCase());
+  }
+  if (calendarFilterTeacher) {
+    displayedLessons = displayedLessons.filter(l => (l.teacher || "").trim().toLowerCase() === calendarFilterTeacher.toLowerCase());
+  }
 
   let lessonsHtml = "";
-  if (dayLessons.length === 0) {
+  if (displayedLessons.length === 0) {
     lessonsHtml = `
       <div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 16px 0;">
-        В этот день пар нет (выходной) 🎉
+        ${hasFilter ? 'Нет пар по выбранному фильтру на этот день' : 'В этот день пар нет (выходной) 🎉'}
       </div>
     `;
   } else {
-    lessonsHtml = dayLessons.map(l => {
+    lessonsHtml = displayedLessons.map(l => {
       const timeDisplay = getLessonTimeDisplay(l);
       const pairNumDisplay = getLessonPairNumberDisplay(l);
       const typeLabel = l.type === 'lab' ? 'Лабораторная' : (l.type === 'seminar' ? 'Семинар' : 'Лекция');
@@ -1395,6 +1521,7 @@ function renderMonthSelectedDayDetails() {
         <div style="font-size: 11.5px; color: var(--text-muted); font-weight: normal; margin-top: 2px;">
           ${capitalizeFirstLetter(fullDay)} • ${weekNum} неделя
           ${hasOv ? '<span class="badge-override" style="margin-left: 6px;">⚡ Точечные изменения</span>' : ''}
+          ${hasFilter ? `<span style="color: var(--primary); font-weight: 600; margin-left: 6px;">(показано ${displayedLessons.length} из ${allDayLessons.length} пар)</span>` : ''}
         </div>
       </div>
       <div style="display: flex; gap: 6px; align-items: center;">
